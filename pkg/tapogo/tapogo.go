@@ -49,10 +49,14 @@ func NewTapo(ip, email, password string) (*Tapo, error) {
 		password: password,
 	}
 
+	log.Print("CP1")
+
 	// start session
 	if err := d.Handshake(); err != nil {
 		return d, err
 	}
+
+	log.Print("CP2")
 	return d, nil
 }
 
@@ -237,6 +241,8 @@ func (d *Tapo) Handshake2(handshakeData *HandshakeData) error {
 
 // Handshake TODO
 func (d *Tapo) Handshake() error {
+
+	log.Print("CP3")
 	// Perform first stage of handshake phase
 	// The mission here is to get a remote seed and cookies
 	handshakeData, err := d.Handshake1()
@@ -244,9 +250,12 @@ func (d *Tapo) Handshake() error {
 		return err
 	}
 
+	log.Print("CP4")
+
 	// Not waiting ends in failures WTF?!
 	time.Sleep(time.Second * 1)
 
+	log.Print("CP5")
 	// Perform second stage of handshake phase
 	// The mission here is to get a KLAP encryption session
 	err = d.Handshake2(&handshakeData)
@@ -254,10 +263,15 @@ func (d *Tapo) Handshake() error {
 		return err
 	}
 
+	log.Print("CP6")
+
 	// Not waiting ends in failures WTF?!
 	time.Sleep(time.Second * 1)
 
+	log.Print("CP7")
 	d.handshakeData = &handshakeData
+
+	log.Print("CP8")
 	return nil
 }
 
