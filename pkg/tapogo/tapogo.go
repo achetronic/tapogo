@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -26,6 +25,7 @@ type Tapo struct {
 	password string
 
 	// Fields related to the device
+	httpClient    *http.Client
 	handshakeData *HandshakeData
 }
 
@@ -47,16 +47,17 @@ func NewTapo(ip, email, password string) (*Tapo, error) {
 		ip:       net.ParseIP(ip),
 		email:    email,
 		password: password,
-	}
 
-	log.Print("CP1")
+		httpClient: &http.Client{
+			Timeout: 2 * time.Second,
+		},
+	}
 
 	// start session
 	if err := d.Handshake(); err != nil {
 		return d, err
 	}
 
-	log.Print("CP2")
 	return d, nil
 }
 
@@ -160,7 +161,7 @@ func (d *Tapo) Handshake1() (handshakeData HandshakeData, err error) {
 
 	//log.Printf("REQUEST: %v", request) TODO: show this in debug mode only
 
-	response, err := http.DefaultClient.Do(request)
+	response, err := d.httpClient.Do(request)
 	if err != nil {
 		return handshakeData, fmt.Errorf("error making HTTP request: %s", err)
 	}
@@ -218,7 +219,7 @@ func (d *Tapo) Handshake2(handshakeData *HandshakeData) error {
 	}
 
 	// Perform the HTTP request
-	response, err := http.DefaultClient.Do(request)
+	response, err := d.httpClient.Do(request)
 	if err != nil {
 		return fmt.Errorf("error making HTTP request: %s", err)
 	}
@@ -242,7 +243,6 @@ func (d *Tapo) Handshake2(handshakeData *HandshakeData) error {
 // Handshake TODO
 func (d *Tapo) Handshake() error {
 
-	log.Print("CP3")
 	// Perform first stage of handshake phase
 	// The mission here is to get a remote seed and cookies
 	handshakeData, err := d.Handshake1()
@@ -250,12 +250,9 @@ func (d *Tapo) Handshake() error {
 		return err
 	}
 
-	log.Print("CP4")
-
 	// Not waiting ends in failures WTF?!
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 250)
 
-	log.Print("CP5")
 	// Perform second stage of handshake phase
 	// The mission here is to get a KLAP encryption session
 	err = d.Handshake2(&handshakeData)
@@ -263,15 +260,10 @@ func (d *Tapo) Handshake() error {
 		return err
 	}
 
-	log.Print("CP6")
-
 	// Not waiting ends in failures WTF?!
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Millisecond * 500)
 
-	log.Print("CP7")
 	d.handshakeData = &handshakeData
-
-	log.Print("CP8")
 	return nil
 }
 
@@ -283,8 +275,7 @@ func (d *Tapo) PerformRequest(request *types.RequestSpec) (response *types.Respo
 		return response, err
 	}
 
-	// TODO: Decide whether to show the request on each one
-	log.Printf("Request: %s", string(jsonBytes))
+	//log.Printf("Request: %s", string(jsonBytes)) TODO: Show in debug mode only
 
 	// 'KLAP' forces to encrypt the entire message, not only some parts inside as done in the past by 'securePassthrough'
 	encryptedPayload, seq := d.handshakeData.Session.encrypt(string(jsonBytes))
@@ -307,7 +298,7 @@ func (d *Tapo) PerformRequest(request *types.RequestSpec) (response *types.Respo
 		httpRequest.AddCookie(cookie)
 	}
 
-	httpResponse, err := http.DefaultClient.Do(httpRequest)
+	httpResponse, err := d.httpClient.Do(httpRequest)
 	if err != nil {
 		return response, err
 	}
@@ -319,7 +310,6 @@ func (d *Tapo) PerformRequest(request *types.RequestSpec) (response *types.Respo
 	}
 
 	// Check request status
-	// TODO: Check if handshake is expired to do it again
 	if httpResponse.StatusCode != 200 {
 		return response, errors.New(fmt.Sprintf("request exited with failed status: %d", httpResponse.StatusCode))
 	}
@@ -327,7 +317,7 @@ func (d *Tapo) PerformRequest(request *types.RequestSpec) (response *types.Respo
 	// Decrypt the payload to process it
 	httpResponseBodyString := d.handshakeData.Session.decrypt(httpResponseBody)
 
-	log.Printf("Response (from device): %s", httpResponseBodyString)
+	//log.Printf("Response (from device): %s", httpResponseBodyString) TODO: Show in debug mode only
 	err = json.Unmarshal([]byte(httpResponseBodyString), &response)
 
 	return response, err
