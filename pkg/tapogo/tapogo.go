@@ -26,7 +26,6 @@ type Tapo struct {
 	password string
 
 	// Fields related to the device
-	client        *http.Client
 	handshakeData *HandshakeData
 }
 
@@ -48,8 +47,6 @@ func NewTapo(ip, email, password string) (*Tapo, error) {
 		ip:       net.ParseIP(ip),
 		email:    email,
 		password: password,
-
-		client: http.DefaultClient,
 	}
 
 	// start session
