@@ -37,11 +37,13 @@ so I decided to research and craft a new one on my own.
         "github.com/achetronic/tapogo/api/types"
     )
 
-    var tapoClient *tapogo.Tapo
-    var response   *types.ResponseSpec
+    var tapoClient  *tapogo.Tapo
+    var tapoOptions *tapogo.TapoOptions{}
+    var response    *types.ResponseSpec
+
     var err error
 
-	tapoClient, err = tapogo.NewTapo("192.168.0.100", "username", "password")
+	tapoClient, err = tapogo.NewTapo("192.168.0.100", "username", "password", tapoOptions)
     response, err = tapoClient.TurnOn()
     response, err = tapoClient.TurnOff()
     response, err = tapoClient.GetEnergyUsage()
