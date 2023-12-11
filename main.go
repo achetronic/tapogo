@@ -7,13 +7,15 @@ import (
 	"github.com/achetronic/tapogo/pkg/tapogo"
 	"log"
 	"os"
+	"time"
 )
 
 const (
-	EmailFlagDescription    = "(Required) Email to access the device"
-	PasswordFlagDescription = "(Required) Password to access the device"
-	IpFlagDescription       = "(Required) Device IP address"
-	CommandFlagDescription  = "Command to execute: device-info (default), on, off, energy-usage"
+	EmailFlagDescription             = "(Required) Email to access the device"
+	PasswordFlagDescription          = "(Required) Password to access the device"
+	IpFlagDescription                = "(Required) Device IP address"
+	CommandFlagDescription           = "Command to execute: device-info (default), on, off, energy-usage"
+	HandshakeDurationFlagDescription = "Duration to sleep between handshake phases (default: '1s')"
 )
 
 func main() {
@@ -26,6 +28,7 @@ func main() {
 	passwordFlag := flag.String("password", "", PasswordFlagDescription)
 	ipFlag := flag.String("ip", "", IpFlagDescription)
 	commandFlag := flag.String("command", "device-info", CommandFlagDescription)
+	handshakeDurationFlag := flag.String("handshake-duration", "1s", HandshakeDurationFlagDescription)
 
 	flag.Parse()
 
@@ -34,8 +37,14 @@ func main() {
 		os.Exit(0)
 	}
 
+	// TODO
+	handshakeDuration, err := time.ParseDuration(*handshakeDurationFlag)
+	extraOptions := tapogo.TapoOptions{
+		HandshakeDelayDuration: handshakeDuration,
+	}
+
 	// 2. Init the client: handshake
-	tapoClient, err = tapogo.NewTapo(*ipFlag, *emailFlag, *passwordFlag)
+	tapoClient, err = tapogo.NewTapo(*ipFlag, *emailFlag, *passwordFlag, &extraOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
