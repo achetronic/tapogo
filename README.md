@@ -31,23 +31,23 @@ so I decided to research and craft a new one on my own.
 
 ## Library
 
-```go
+```golang
     import (
         "github.com/achetronic/tapogo/pkg/tapogo"
-        "github.com/achetronic/tapogo/api/types"
     )
 
     var tapoClient  *tapogo.Tapo
-    var tapoOptions *tapogo.TapoOptions{}
-    var response    *types.ResponseSpec
-
     var err error
 
-	tapoClient, err = tapogo.NewTapo("192.168.0.100", "username", "password", tapoOptions)
-    response, err = tapoClient.TurnOn()
-    response, err = tapoClient.TurnOff()
-    response, err = tapoClient.GetEnergyUsage()
-    response, err = tapoClient.DeviceInfo()
+    tapoClient, err = tapogo.NewTapo("192.168.0.100", "username", "password", &tapogo.TapoOptions{})
+
+    // Perform actions over the plug
+    response, err := tapoClient.TurnOn()
+    response, err  = tapoClient.TurnOff()
+
+    // Get data from device
+    response, err  = tapoClient.GetEnergyUsage()
+    response, err  = tapoClient.DeviceInfo()
 ```
 
 ## CLI
