@@ -103,8 +103,11 @@ func (d *Tapo) PerformRequest(request *types.RequestSpec) (response *types.Respo
 		return response, errors.New(fmt.Sprintf("request exited with failed status: %d", httpResponse.StatusCode))
 	}
 
-	// Decrypt the payload to process it
-	httpResponseBodyString := d.handshakeData.Session.decrypt(httpResponseBody)
+	// Decrypt the payload if not plaintext 200 OK to process it
+	httpResponseBodyString := string(httpResponseBody[:])
+	if httpResponseBodyString != "<html><body><center>200 OK</center></body></html>" {
+		httpResponseBodyString = d.handshakeData.Session.decrypt(httpResponseBody)
+	}
 
 	//log.Printf("Response (from device): %s", httpResponseBodyString) TODO: Show in debug mode only
 	err = json.Unmarshal([]byte(httpResponseBodyString), &response)
